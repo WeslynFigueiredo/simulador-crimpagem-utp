@@ -98,6 +98,20 @@
     <audio id="cut-sound" src="js/assets/cut_sound.mp3" preload="auto"></audio>
     <audio id="untwist-sound" src="js/assets/untwist_sound.mp3" preload="auto"></audio>
 
+    <div id="welcome-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Bem-vindo ao Simulador de Crimpagem de Cabo UTP do SENAI!</h2>
+            <p>Este simulador interativo irá guiá-lo no processo de crimpagem de cabos de rede, nos padrões T568A, T568B e Crossover.</p>
+            <p><strong>Primeiros Passos:</strong></p>
+            <ol>
+                <li>Escolha o tipo de cabo (T568A, T568B ou Crossover).</li>
+                <li>Siga as instruções passo a passo que aparecerão no painel à direita.</li>
+                <li><strong>No celular:</strong> Para arrastar os fios, <strong>mantenha o dedo pressionado sobre o fio e arraste-o</strong>. Para remover um fio do conector RJ45, dê um <strong>toque duplo rápido</strong> sobre ele.</li>
+            </ol>
+            <button id="start-simulation-button" class="action-button">Começar Simulação</button>
+        </div>
+    </div>
+
     <script src="js/script.js"></script>
 </body>
 </html>
