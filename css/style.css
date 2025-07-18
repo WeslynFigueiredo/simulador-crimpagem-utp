@@ -218,8 +218,8 @@ header h1 {
 #rj45-connector {
     position: relative;
     width: 100%;
-    max-width: 250px;
-    height: 150px;
+    max-width: 250px; /* Mantém um tamanho máximo para desktops */
+    height: 150px; /* Altura original para desktops */
     margin-top: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -231,7 +231,7 @@ header h1 {
 }
 
 #rj45-connector img {
-    width: 80%;
+    width: 80%; /* A imagem interna do RJ45 ocupa 80% do contêiner */
     height: auto;
     position: absolute;
     bottom: 0;
@@ -538,6 +538,11 @@ header h1 {
     header h1 {
         font-size: 1.5rem;
     }
+
+    #rj45-connector {
+        max-width: 300px; /* Ajuste ligeiro para tablets/laptops menores */
+        height: 180px; /* Pode aumentar um pouco para melhor visualização */
+    }
 }
 
 @media (max-width: 768px) {
@@ -596,14 +601,18 @@ header h1 {
     }
 
     #rj45-connector {
-        height: 120px;
-        margin-top: 1rem;
-        padding-bottom: 0.3rem;
+        max-width: 200px; /* **Reduz consideravelmente para celulares/tablets** */
+        height: 120px; /* Ajuste de altura proporcional */
+        margin-top: 0.8rem; /* Reduz margem superior */
+    }
+
+    #rj45-connector img {
+        width: 90%; /* Pode ser um pouco maior para preencher o espaço */
     }
 
     .pin-slots {
-        bottom: 20px;
-        width: 80%;
+        bottom: 20px; /* Ajustar a posição dos pinos */
+        width: 80%; /* Ajustar largura dos pinos */
     }
 
     .pin-slot {
@@ -718,15 +727,20 @@ header h1 {
         bottom: 2px;
     }
     #rj45-connector {
+        max-width: 160px;
         height: 100px;
+        margin-top: 0.5rem;
+    }
+    #rj45-connector img {
+        width: 95%;
     }
     .pin-slots {
-        bottom: 15px;
-        width: 90%;
+        bottom: 12px;
+        width: 85%;
     }
     .pin-slot {
-        width: 12px;
-        height: 18px;
+        width: 10px;
+        height: 15px;
     }
     .tester-lights .light {
         width: 1rem;
