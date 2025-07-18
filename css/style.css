@@ -135,8 +135,8 @@ header h1 {
     max-width: 450px;
     overflow-x: auto; /* Adiciona scroll horizontal se ainda não couber */
     padding-top: 10px; /* Para garantir que o topo da imagem não seja cortado se o alinhamento mudar */
-    /* Imagem de fundo para representar os fios trançados */
-    background-image: url('../assets/stripped_cable_twisted.png'); /* A imagem que você acabou de gerar */
+    /* Imagem de fundo para representar os fios trançados (inicialmente visível) */
+    background-image: url('../assets/stripped_cable_twisted.png'); 
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -146,7 +146,7 @@ header h1 {
 #stripped-wires.visible {
     opacity: 1;
     pointer-events: auto; /* Habilita interações */
-    background-image: url('../assets/stripped_cable_twisted.png'); /* Garante que a imagem esteja lá */
+    /* background-image já está definida acima */
 }
 
 /* Quando os fios são "desentrançados" e aparecem individualmente */
@@ -155,12 +155,35 @@ header h1 {
     /* display: flex; já está em #stripped-wires */
 }
 
-/* Quando os fios são "cortados" e alinhados */
-#stripped-wires.aligned .wire img {
-    /* Ajuste para fazer os fios parecerem mais alinhados/retos na base */
-    /* Pode ser uma imagem diferente do fio ou um ajuste de altura/padding */
-    /* Exemplo: se as imagens dos fios tiverem uma versão "reta" */
-    /* Ou simplesmente garantir que o padding inferior os "empurre" para cima */
+/* Classe para o "ghost" element durante o touch drag */
+.touch-drag-ghost {
+    position: fixed;
+    pointer-events: none; /* Não interfere com eventos debaixo */
+    z-index: 2001; /* Acima de tudo, mas abaixo do modal */
+    opacity: 0.7;
+    width: 60px; /* Mesma largura do .wire */
+    height: 130px; /* Mesma altura do .wire */
+    transform: translate(-50%, -50%); /* Centraliza no dedo */
+}
+.touch-drag-ghost img {
+    width: 100%;
+    height: 100px;
+    object-fit: contain;
+}
+.touch-drag-ghost .wire-name {
+    font-size: 0.55em;
+    color: var(--senai-text-color);
+    text-align: center;
+    position: absolute;
+    bottom: 5px;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0 2px;
+    box-sizing: border-box;
 }
 
 
@@ -180,7 +203,8 @@ header h1 {
     background-color: #fff;
     border: 1px solid #eee;
     flex-shrink: 0;
-    pointer-events: none; /* Inicia desabilitado para arrastar */
+    pointer-events: none; /* Inicia desabilitado para arrastar (controlado pelo JS) */
+    touch-action: none; /* Previne o scroll da página ao arrastar no touch */
 }
 
 .wire.draggable {
@@ -508,6 +532,71 @@ header h1 {
     text-align: center;
 }
 
+/* --- Modal de Boas-Vindas --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex; /* Garante que o modal esteja visível por padrão ao carregar */
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* Acima de tudo */
+}
+
+.modal-content {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 10px;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    color: var(--senai-text-color);
+}
+
+.modal-content h2 {
+    color: var(--senai-blue);
+    margin-top: 0;
+    font-size: 1.8rem;
+}
+
+.modal-content p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.modal-content ol {
+    text-align: left;
+    margin: 1.5rem auto;
+    max-width: 80%;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.modal-content ol strong {
+    color: var(--senai-blue);
+}
+
+.modal-content button {
+    margin-top: 1.5rem;
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+    background-color: var(--senai-green);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.modal-content button:hover {
+    background-color: #1a6f3f;
+}
+
+
 /* --- Media Queries para Responsividade --- */
 
 @media (max-width: 1024px) {
@@ -540,8 +629,8 @@ header h1 {
     }
 
     #rj45-connector {
-        max-width: 300px; /* Ajuste ligeiro para tablets/laptops menores */
-        height: 180px; /* Pode aumentar um pouco para melhor visualização */
+        max-width: 300px;
+        height: 180px;
     }
 }
 
@@ -601,18 +690,18 @@ header h1 {
     }
 
     #rj45-connector {
-        max-width: 200px; /* **Reduz consideravelmente para celulares/tablets** */
-        height: 120px; /* Ajuste de altura proporcional */
-        margin-top: 0.8rem; /* Reduz margem superior */
+        max-width: 200px;
+        height: 120px;
+        margin-top: 0.8rem;
     }
 
     #rj45-connector img {
-        width: 90%; /* Pode ser um pouco maior para preencher o espaço */
+        width: 90%;
     }
 
     .pin-slots {
-        bottom: 20px; /* Ajustar a posição dos pinos */
-        width: 80%; /* Ajustar largura dos pinos */
+        bottom: 20px;
+        width: 80%;
     }
 
     .pin-slot {
@@ -693,6 +782,25 @@ header h1 {
         padding: 0.8rem 1.2rem;
         font-size: 0.9rem;
         width: 90%;
+    }
+
+    /* Modal no Mobile */
+    .modal-content {
+        padding: 1.5rem;
+    }
+    .modal-content h2 {
+        font-size: 1.5rem;
+    }
+    .modal-content p {
+        font-size: 0.9rem;
+    }
+    .modal-content ol {
+        font-size: 0.85rem;
+        margin: 1rem auto;
+    }
+    .modal-content button {
+        padding: 0.7rem 1.5rem;
+        font-size: 1rem;
     }
 }
 
