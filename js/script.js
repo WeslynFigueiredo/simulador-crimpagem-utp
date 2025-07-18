@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const testerMessage = document.getElementById('tester-message');
     const resetButton = document.getElementById('reset-button');
 
+    const welcomeModal = document.getElementById('welcome-modal');
+    const startSimulationButton = document.getElementById('start-simulation-button');
+
     // Sons
     const stripSound = document.getElementById('strip-sound');
     const crimpSound = document.getElementById('crimp-sound');
@@ -32,7 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentStep = 0;
     let wiresOrder = new Array(8).fill(null);
     let cableCrimped = false;
-    let dragOriginWire = null;
+    let dragOriginWire = null; // Para arrastar do mouse
+    let touchDragGhost = null; // Para o elemento "fantasma" no toque
+    let touchDragTargetWire = null; // O fio real que está sendo arrastado no toque
 
     // Definição dos padrões de cores
     const patterns = {
@@ -141,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             availableTools: ['cut']
         },
         {
-            instruction: 'Fios cortados e alinhados! Agora, **arraste os fios** um por um para os slots do conector RJ45 na **ordem correta** do padrão escolhido. Use os nomes abaixo dos fios para ajudar! **Dica: Duplo clique em um fio no RJ45 para removê-lo e corrigir.**',
+            instruction: 'Fios cortados e alinhados! Agora, **arraste os fios** um por um para os slots do conector RJ45 na **ordem correta** do padrão escolhido. Use os nomes abaixo dos fios para ajudar! **Dica: Duplo clique ou toque duplo em um fio no RJ45 para removê-lo e corrigir.**',
             highlight: 'rj45-connector',
             requiredAction: 'dragWires',
             availableTools: []
@@ -193,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             highlightTarget(step.highlight, true);
         }
 
-        // Controla o estado de arrastável dos fios
+        // Controla o estado de arrastável dos fios (mouse e touch)
         if (step.requiredAction === 'dragWires') {
             document.querySelectorAll('#stripped-wires .wire').forEach(wire => {
                 wire.classList.add('draggable');
@@ -211,10 +216,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Funções de Ação do Simulador ---
 
+    // Event listener para o botão "Começar Simulação" do modal
+    startSimulationButton.addEventListener('click', () => {
+        welcomeModal.style.display = 'none'; // Esconde o modal
+        goToStep(0); // Inicia o simulador no passo 0
+    });
+
     selectT568AButton.addEventListener('click', () => {
         if (currentStep === 0) {
             currentPattern = 'T568A';
             goToStep(1);
+            // Desabilita botões de padrão após seleção
+            selectT568AButton.disabled = true;
+            selectT568BButton.disabled = true;
+            selectCrossoverButton.disabled = true;
         }
     });
 
@@ -222,6 +237,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentStep === 0) {
             currentPattern = 'T568B';
             goToStep(1);
+            selectT568AButton.disabled = true;
+            selectT568BButton.disabled = true;
+            selectCrossoverButton.disabled = true;
         }
     });
 
@@ -229,6 +247,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentStep === 0) {
             currentPattern = 'Crossover';
             goToStep(1);
+            selectT568AButton.disabled = true;
+            selectT568BButton.disabled = true;
+            selectCrossoverButton.disabled = true;
         }
     });
 
@@ -240,8 +261,10 @@ document.addEventListener('DOMContentLoaded', () => {
              showFeedback('Clique no cabo UTP para decapar.', true);
         } else if (currentStep > 2 && currentTool === 'stripper') {
             showFeedback('O cabo já foi desencapado.', false);
-        } else if (currentStep < 2 && currentStep !== 0 && currentTool !== 'stripper') {
+        } else if (currentStep < 2 && currentStep !== 0) {
             showFeedback('Selecione o decapador para o próximo passo.', true);
+        } else if (currentStep === 0) {
+             showFeedback('Selecione um padrão de crimpagem primeiro.', true);
         }
     });
 
@@ -274,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initialWireOrder.forEach(color => {
             const wireContainer = document.createElement('div');
             wireContainer.classList.add('wire');
-            wireContainer.draggable = false; // Inicia não arrastável
+            wireContainer.draggable = true; // Habilita o drag normal para mouse
             wireContainer.dataset.color = color;
 
             const wireImg = document.createElement('img');
@@ -287,6 +310,125 @@ document.addEventListener('DOMContentLoaded', () => {
             wireName.textContent = color.replace('-', ' ');
             wireContainer.appendChild(wireName);
 
+            // --- Eventos de TOQUE para Drag & Drop em Mobile ---
+            let initialX, initialY;
+            let currentWireGhost = null; // Fantasma para o toque
+
+            wireContainer.addEventListener('touchstart', (e) => {
+                if (currentStep === 5 && wireContainer.classList.contains('draggable')) {
+                    e.preventDefault(); // Previne scroll da página
+                    initialX = e.touches[0].clientX;
+                    initialY = e.touches[0].clientY;
+                    touchDragTargetWire = wireContainer; // O fio real que estamos arrastando
+
+                    // Cria o elemento fantasma
+                    touchDragGhost = wireContainer.cloneNode(true);
+                    touchDragGhost.classList.add('touch-drag-ghost');
+                    touchDragGhost.style.position = 'fixed';
+                    touchDragGhost.style.left = initialX + 'px';
+                    touchDragGhost.style.top = initialY + 'px';
+                    touchDragGhost.style.transform = 'translate(-50%, -50%)'; // Centraliza
+                    document.body.appendChild(touchDragGhost);
+
+                    wireContainer.style.opacity = '0.1'; // Esconde o original
+                    dragSound.currentTime = 0;
+                    dragSound.play();
+                } else {
+                    showFeedback('Ainda não é hora de arrastar os fios. Siga as instruções!', true);
+                }
+            }, { passive: false }); // `passive: false` para permitir e.preventDefault()
+
+            wireContainer.addEventListener('touchmove', (e) => {
+                if (touchDragGhost) {
+                    e.preventDefault(); // Previne scroll da página
+                    touchDragGhost.style.left = e.touches[0].clientX + 'px';
+                    touchDragGhost.style.top = e.touches[0].clientY + 'px';
+
+                    // Opcional: Adicionar feedback visual nos pin-slots durante o arrastar por toque
+                    pinSlots.forEach(slot => {
+                        const slotRect = slot.getBoundingClientRect();
+                        const ghostRect = touchDragGhost.getBoundingClientRect();
+                        if (
+                            ghostRect.left < slotRect.right &&
+                            ghostRect.right > slotRect.left &&
+                            ghostRect.top < slotRect.bottom &&
+                            ghostRect.bottom > slotRect.top
+                        ) {
+                            slot.style.backgroundColor = '#e0f0ff';
+                        } else {
+                             if (!slot.classList.contains('filled')) {
+                                slot.style.backgroundColor = '#f9f9f9';
+                            }
+                        }
+                    });
+                }
+            }, { passive: false });
+
+            wireContainer.addEventListener('touchend', (e) => {
+                if (touchDragGhost) {
+                    document.body.removeChild(touchDragGhost);
+                    touchDragGhost = null;
+
+                    if (touchDragTargetWire) {
+                        touchDragTargetWire.style.opacity = '1'; // Restaura opacidade do original
+
+                        // Determina onde o fio foi "solto"
+                        let dropped = false;
+                        pinSlots.forEach(slot => {
+                            const slotRect = slot.getBoundingClientRect();
+                            const touchX = e.changedTouches[0].clientX;
+                            const touchY = e.changedTouches[0].clientY;
+
+                            if (
+                                touchX > slotRect.left &&
+                                touchX < slotRect.right &&
+                                touchY > slotRect.top &&
+                                touchY < slotRect.bottom
+                            ) {
+                                // Se tocou em um slot, tenta a lógica de drop
+                                const targetPin = parseInt(slot.dataset.pin) - 1;
+                                const color = touchDragTargetWire.dataset.color; // Pega a cor do fio real
+
+                                if (currentStep === 5) {
+                                    if (wiresOrder[targetPin] === null) {
+                                        const wireImg = document.createElement('img');
+                                        wireImg.src = wireImages[color];
+                                        wireImg.classList.add('wire-in-slot');
+                                        slot.appendChild(wireImg);
+                                        slot.classList.add('filled');
+                                        wiresOrder[targetPin] = color;
+                                        showFeedback(`Fio ${color.replace('-', ' ')} colocado no pino ${targetPin + 1}.`);
+
+                                        touchDragTargetWire.remove(); // Remove o fio original da área
+                                        
+                                        if (wiresOrder.every(wire => wire !== null)) {
+                                            goToStep(6);
+                                        }
+                                        dropped = true;
+                                    } else {
+                                        showFeedback('Este pino já está ocupado! Duplo toque para remover.', true);
+                                    }
+                                } else {
+                                    showFeedback('Ainda não é hora de arrastar os fios. Siga as instruções!', true);
+                                }
+                            }
+                            // Limpa highlight dos slots
+                            if (!slot.classList.contains('filled')) {
+                                slot.style.backgroundColor = '#f9f9f9';
+                            }
+                        });
+                        touchDragTargetWire = null; // Limpa a referência do fio arrastado
+
+                        if (!dropped && currentStep === 5) {
+                            showFeedback('Fio solto em área inválida. Arraste para um pino do RJ45.', true);
+                        }
+                    }
+                }
+            });
+            // --- FIM dos Eventos de TOQUE ---
+
+
+            // --- Eventos de MOUSE para Drag & Drop (permanecem, mas 'draggable' será controlado pelo JS) ---
             wireContainer.addEventListener('dragstart', (e) => {
                 if (currentStep === 5 && wireContainer.classList.contains('draggable')) {
                     dragSound.currentTime = 0;
@@ -308,6 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 dragOriginWire = null;
             });
+            // --- FIM dos Eventos de MOUSE ---
 
             strippedWiresContainer.appendChild(wireContainer);
         });
@@ -322,12 +465,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 strippedWiresContainer.classList.add('untwisted'); // Adiciona classe para estilo de fios individuais
                 untwistSound.play();
                 showFeedback('Fios desentrançados!');
-                goToStep(4); // Próximo passo: cortar
+                goToStep(4);
             }
         } else if (currentStep > 3 && currentTool === 'untwist') {
             showFeedback('Os fios já foram desentrançados.', false);
         } else if (currentStep < 3 && currentStep !== 0) {
             showFeedback('Por favor, siga a sequência correta. Primeiro, decape o cabo.', true);
+        } else if (currentStep === 0) {
+            showFeedback('Selecione um padrão de crimpagem primeiro.', true);
         } else {
             showFeedback('Selecione o **Desentrançador** para desentrançar os fios.', true);
         }
@@ -340,18 +485,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 strippedWiresContainer.classList.add('aligned'); // Adiciona classe para estilo de fios alinhados
                 cutSound.play();
                 showFeedback('Fios cortados e alinhados!');
-                goToStep(5); // Próximo passo: arrastar para o RJ45
+                goToStep(5);
             }
         } else if (currentStep > 4 && currentTool === 'cut') {
             showFeedback('Os fios já foram cortados.', false);
         } else if (currentStep < 4 && currentStep !== 0) {
             showFeedback('Por favor, siga a sequência correta. Primeiro, desentrançe os fios.', true);
+        } else if (currentStep === 0) {
+            showFeedback('Selecione um padrão de crimpagem primeiro.', true);
         } else {
             showFeedback('Selecione o **Cortador de Fios** para alinhar as pontas.', true);
         }
     });
 
-    // 5. Arrastar e Soltar Fios no RJ45
+    // 5. Arrastar e Soltar Fios no RJ45 (Eventos de Mouse)
     pinSlots.forEach(slot => {
         slot.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -391,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                 } else {
-                    showFeedback('Este pino já está ocupado! Remova o fio existente antes de colocar um novo.', true);
+                    showFeedback('Este pino já está ocupado! Duplo clique para remover.', true);
                 }
             } else {
                 showFeedback('Ainda não é hora de arrastar os fios. Siga as instruções!', true);
@@ -402,59 +549,187 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Função para remover um fio do RJ45 (desfazer)
     pinSlots.forEach(slot => {
+        // Evento para Duplo Clique (Mouse)
         slot.addEventListener('dblclick', (e) => {
-            const targetPin = parseInt(slot.dataset.pin) - 1;
-            if (wiresOrder[targetPin] !== null && !cableCrimped && currentStep >= 5 && currentStep < 7) {
-                const removedColor = wiresOrder[targetPin];
-                wiresOrder[targetPin] = null;
-                slot.innerHTML = '';
-                slot.classList.remove('filled');
-                showFeedback(`Fio ${removedColor.replace('-', ' ')} removido do pino ${targetPin + 1}.`);
+            handleRemoveWireFromRJ45(slot);
+        });
 
-                const wireContainer = document.createElement('div');
-                wireContainer.classList.add('wire', 'draggable');
-                wireContainer.dataset.color = removedColor;
-
-                const wireImg = document.createElement('img');
-                wireImg.src = wireImages[removedColor];
-                wireImg.alt = removedColor;
-                wireContainer.appendChild(wireImg);
-
-                const wireName = document.createElement('span');
-                wireName.classList.add('wire-name');
-                wireName.textContent = removedColor.replace('-', ' ');
-                wireContainer.appendChild(wireName);
-
-                wireContainer.addEventListener('dragstart', (e) => {
-                    dragSound.currentTime = 0;
-                    dragSound.play();
-                    e.dataTransfer.setData('text/plain', removedColor);
-                    dragOriginWire = e.target.closest('.wire');
-                    if (dragOriginWire) {
-                        dragOriginWire.style.opacity = '0.5';
-                    }
-                });
-
-                wireContainer.addEventListener('dragend', (e) => {
-                    if (dragOriginWire && dragOriginWire.parentNode) {
-                        dragOriginWire.style.opacity = '1';
-                    }
-                    dragOriginWire = null;
-                });
-
-                strippedWiresContainer.appendChild(wireContainer);
-                strippedWiresContainer.classList.add('visible');
-
-                if (currentStep === 6) {
-                    goToStep(5);
-                }
-            } else if (cableCrimped) {
-                showFeedback('O cabo já foi crimpado. Reinicie para fazer novas alterações.', true);
-            } else if (currentStep < 5 || currentStep >= 7) {
-                 showFeedback('Não é possível remover fios nesta etapa.', true);
+        // Evento para Duplo Toque (Mobile)
+        let lastTap = 0;
+        slot.addEventListener('touchend', (e) => {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            if (tapLength < 300 && tapLength > 0) { // Duplo toque em 300ms
+                e.preventDefault(); // Previne zoom
+                handleRemoveWireFromRJ45(slot);
             }
+            lastTap = currentTime;
         });
     });
+
+    function handleRemoveWireFromRJ45(slot) {
+        const targetPin = parseInt(slot.dataset.pin) - 1;
+        if (wiresOrder[targetPin] !== null && !cableCrimped && currentStep >= 5 && currentStep < 7) {
+            const removedColor = wiresOrder[targetPin];
+            wiresOrder[targetPin] = null;
+            slot.innerHTML = '';
+            slot.classList.remove('filled');
+            showFeedback(`Fio ${removedColor.replace('-', ' ')} removido do pino ${targetPin + 1}.`);
+
+            const wireContainer = document.createElement('div');
+            wireContainer.classList.add('wire', 'draggable');
+            wireContainer.dataset.color = removedColor;
+
+            const wireImg = document.createElement('img');
+            wireImg.src = wireImages[removedColor];
+            wireImg.alt = removedColor;
+            wireContainer.appendChild(wireImg);
+
+            const wireName = document.createElement('span');
+            wireName.classList.add('wire-name');
+            wireName.textContent = removedColor.replace('-', ' ');
+            wireContainer.appendChild(wireName);
+
+            // Re-adiciona os event listeners de drag para mouse
+            wireContainer.addEventListener('dragstart', (e) => {
+                dragSound.currentTime = 0;
+                dragSound.play();
+                e.dataTransfer.setData('text/plain', removedColor);
+                dragOriginWire = e.target.closest('.wire');
+                if (dragOriginWire) {
+                    dragOriginWire.style.opacity = '0.5';
+                }
+            });
+            wireContainer.addEventListener('dragend', (e) => {
+                if (dragOriginWire && dragOriginWire.parentNode) {
+                    dragOriginWire.style.opacity = '1';
+                }
+                dragOriginWire = null;
+            });
+            // Re-adiciona os event listeners de toque (drag para mobile)
+            let initialX, initialY;
+            let currentWireGhost = null;
+
+            wireContainer.addEventListener('touchstart', (e) => {
+                if (currentStep === 5 && wireContainer.classList.contains('draggable')) {
+                    e.preventDefault();
+                    initialX = e.touches[0].clientX;
+                    initialY = e.touches[0].clientY;
+                    touchDragTargetWire = wireContainer;
+
+                    touchDragGhost = wireContainer.cloneNode(true);
+                    touchDragGhost.classList.add('touch-drag-ghost');
+                    touchDragGhost.style.position = 'fixed';
+                    touchDragGhost.style.left = initialX + 'px';
+                    touchDragGhost.style.top = initialY + 'px';
+                    touchDragGhost.style.transform = 'translate(-50%, -50%)';
+                    document.body.appendChild(touchDragGhost);
+
+                    wireContainer.style.opacity = '0.1';
+                    dragSound.currentTime = 0;
+                    dragSound.play();
+                } else {
+                    showFeedback('Ainda não é hora de arrastar os fios. Siga as instruções!', true);
+                }
+            }, { passive: false });
+
+            wireContainer.addEventListener('touchmove', (e) => {
+                if (touchDragGhost) {
+                    e.preventDefault();
+                    touchDragGhost.style.left = e.touches[0].clientX + 'px';
+                    touchDragGhost.style.top = e.touches[0].clientY + 'px';
+
+                    pinSlots.forEach(slot => {
+                        const slotRect = slot.getBoundingClientRect();
+                        const ghostRect = touchDragGhost.getBoundingClientRect();
+                        if (
+                            ghostRect.left < slotRect.right &&
+                            ghostRect.right > slotRect.left &&
+                            ghostRect.top < slotRect.bottom &&
+                            ghostRect.bottom > slotRect.top
+                        ) {
+                            slot.style.backgroundColor = '#e0f0ff';
+                        } else {
+                             if (!slot.classList.contains('filled')) {
+                                slot.style.backgroundColor = '#f9f9f9';
+                            }
+                        }
+                    });
+                }
+            }, { passive: false });
+
+            wireContainer.addEventListener('touchend', (e) => {
+                if (touchDragGhost) {
+                    document.body.removeChild(touchDragGhost);
+                    touchDragGhost = null;
+
+                    if (touchDragTargetWire) {
+                        touchDragTargetWire.style.opacity = '1';
+
+                        let dropped = false;
+                        pinSlots.forEach(slot => {
+                            const slotRect = slot.getBoundingClientRect();
+                            const touchX = e.changedTouches[0].clientX;
+                            const touchY = e.changedTouches[0].clientY;
+
+                            if (
+                                touchX > slotRect.left &&
+                                touchX < slotRect.right &&
+                                touchY > slotRect.top &&
+                                touchY < slotRect.bottom
+                            ) {
+                                const targetPin = parseInt(slot.dataset.pin) - 1;
+                                const color = touchDragTargetWire.dataset.color;
+
+                                if (currentStep === 5) {
+                                    if (wiresOrder[targetPin] === null) {
+                                        const wireImg = document.createElement('img');
+                                        wireImg.src = wireImages[color];
+                                        wireImg.classList.add('wire-in-slot');
+                                        slot.appendChild(wireImg);
+                                        slot.classList.add('filled');
+                                        wiresOrder[targetPin] = color;
+                                        showFeedback(`Fio ${color.replace('-', ' ')} colocado no pino ${targetPin + 1}.`);
+
+                                        touchDragTargetWire.remove();
+                                        
+                                        if (wiresOrder.every(wire => wire !== null)) {
+                                            goToStep(6);
+                                        }
+                                        dropped = true;
+                                    } else {
+                                        showFeedback('Este pino já está ocupado! Duplo toque para remover.', true);
+                                    }
+                                } else {
+                                    showFeedback('Ainda não é hora de arrastar os fios. Siga as instruções!', true);
+                                }
+                            }
+                            if (!slot.classList.contains('filled')) {
+                                slot.style.backgroundColor = '#f9f9f9';
+                            }
+                        });
+                        touchDragTargetWire = null;
+
+                        if (!dropped && currentStep === 5) {
+                            showFeedback('Fio solto em área inválida. Arraste para um pino do RJ45.', true);
+                        }
+                    }
+                }
+            });
+
+            strippedWiresContainer.appendChild(wireContainer);
+            strippedWiresContainer.classList.add('visible');
+
+            if (currentStep === 6) {
+                goToStep(5);
+            }
+        } else if (cableCrimped) {
+            showFeedback('O cabo já foi crimpado. Reinicie para fazer novas alterações.', true);
+        } else if (currentStep < 5 || currentStep >= 7) {
+             showFeedback('Não é possível remover fios nesta etapa.', true);
+        }
+    }
+
 
     // 6. Crimpar o Cabo
     toolCrimper.addEventListener('click', () => {
@@ -493,6 +768,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showFeedback('O cabo já foi crimpado. Teste-o ou reinicie a simulação.', false);
         } else if (currentStep < 6 && currentStep !== 0) {
             showFeedback('Por favor, siga a sequência correta. Arraste os fios para o RJ45 primeiro.', true);
+        } else if (currentStep === 0) {
+            showFeedback('Selecione um padrão de crimpagem primeiro.', true);
         } else {
             showFeedback('Selecione o **Alicate de Crimpar** para finalizar a crimpagem.', true);
         }
@@ -554,13 +831,15 @@ document.addEventListener('DOMContentLoaded', () => {
         wiresOrder = new Array(8).fill(null);
         cableCrimped = false;
         dragOriginWire = null;
+        touchDragGhost = null;
+        touchDragTargetWire = null;
 
-        cableImg.src = 'js/assets/cable_utp.png'; // Volta para a imagem do cabo inteiro
-        cableImg.classList.remove('hidden'); // Garante que esteja visível
+        cableImg.src = 'js/assets/cable_utp.png';
+        cableImg.classList.remove('hidden');
         strippedWiresContainer.innerHTML = '';
-        strippedWiresContainer.classList.remove('visible', 'untwisted', 'aligned'); // Remove todas as classes de estado
-        strippedWiresContainer.style.backgroundImage = 'none'; // Remove imagem de fundo
-        strippedWiresContainer.style.display = 'none'; // Esconde o container de fios individuais
+        strippedWiresContainer.classList.remove('visible', 'untwisted', 'aligned');
+        strippedWiresContainer.style.backgroundImage = 'none';
+        strippedWiresContainer.style.display = 'none';
 
         pinSlots.forEach(slot => {
             slot.innerHTML = '';
@@ -580,8 +859,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.tool.active').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.step-target.highlight, .tool.highlight').forEach(el => el.classList.remove('highlight'));
 
+        // Certifique-se de que o modal está escondido no reset, a menos que queira que apareça
+        // welcomeModal.style.display = 'none'; 
         goToStep(0);
     });
 
-    goToStep(0);
+    // INÍCIO DO SIMULADOR
+    // Ao carregar a página, exibe o modal de boas-vindas.
+    // O simulador só realmente começa quando o botão "Começar Simulação" é clicado.
+    welcomeModal.style.display = 'flex'; // Garante que o modal está visível ao carregar
+    // Não chame goToStep(0) aqui, pois ele será chamado pelo clique do botão do modal.
 });
