@@ -1,0 +1,735 @@
+/* Variáveis CSS para as cores do SENAI (aproximação) */
+:root {
+    --senai-blue: #004D7D; /* Azul escuro principal */
+    --senai-green: #218551; /* Verde */
+    --senai-yellow: #FFD700; /* Amarelo/Dourado (pode ser ajustado para um tom mais institucional) */
+    --senai-gray-light: #f0f0f0;
+    --senai-gray-medium: #cccccc;
+    --senai-gray-dark: #333333;
+    --senai-text-color: #333333;
+    --senai-button-primary: var(--senai-blue);
+    --senai-button-hover: #003a66;
+    --senai-button-reset: #dc3545;
+    --senai-button-reset-hover: #c82333;
+    --senai-highlight: var(--senai-yellow); /* Dourado para destaque */
+}
+
+body {
+    font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--senai-gray-light);
+    margin: 0;
+    padding: 1rem;
+    color: var(--senai-text-color);
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+header {
+    width: 100%;
+    max-width: 1400px;
+    margin-bottom: 1.5rem;
+    background-color: var(--senai-blue);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.senai-logo {
+    height: 60px;
+    width: auto;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 500;
+}
+
+.simulator-container {
+    display: flex;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    width: 95%;
+    max-width: 1400px;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.workspace {
+    flex: 3;
+    min-width: 300px;
+    padding-right: 1.5rem;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.step-target {
+    border: 2px dashed transparent;
+    transition: border-color 0.3s ease;
+}
+
+.step-target.highlight {
+    border-color: var(--senai-highlight);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+#cable-area {
+    position: relative;
+    width: 100%;
+    max-width: 450px;
+    height: 150px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px dashed var(--senai-gray-medium);
+    border-radius: 5px;
+}
+
+#cable-img {
+    width: 100%;
+    height: auto;
+    position: absolute;
+    transition: opacity 0.5s ease-out;
+}
+
+/* Nova classe para esconder a imagem do cabo quando os fios aparecem */
+#cable-img.hidden {
+    opacity: 0;
+    pointer-events: none; /* Impede interações */
+}
+
+#stripped-wires {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex; /* Será 'flex' quando visível */
+    gap: 2px;
+    height: 140px;
+    align-items: flex-end;
+    opacity: 0; /* Inicia invisível */
+    transition: opacity 0.5s ease-in;
+    flex-wrap: nowrap;
+    justify-content: center;
+    width: calc(100% - 20px);
+    max-width: 450px;
+    overflow-x: auto;
+    padding-top: 10px;
+    /* Imagem de fundo para representar os fios trançados */
+    background-image: url('../assets/stripped_cable_twisted.png'); /* A imagem que você acabou de gerar */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none; /* Inicia desabilitado para interações */
+}
+
+#stripped-wires.visible {
+    opacity: 1;
+    pointer-events: auto; /* Habilita interações */
+    background-image: url('../assets/stripped_cable_twisted.png'); /* Garante que a imagem esteja lá */
+}
+
+/* Quando os fios são "desentrançados" e aparecem individualmente */
+#stripped-wires.untwisted {
+    background-image: none; /* Remove a imagem de fundo */
+    display: flex; /* Garante que os fios individuais sejam exibidos */
+}
+
+/* Quando os fios são "cortados" e alinhados */
+#stripped-wires.aligned .wire img {
+    /* Ajuste para fazer os fios parecerem mais alinhados/retos na base */
+    /* Pode ser uma imagem diferente do fio ou um ajuste de altura/padding */
+    /* Exemplo: se as imagens dos fios tiverem uma versão "reta" */
+    /* Ou simplesmente garantir que o padding inferior os "empurre" para cima */
+}
+
+
+.wire {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 60px;
+    width: 60px;
+    height: 130px;
+    border-radius: 3px;
+    cursor: grab;
+    position: relative;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    padding-bottom: 30px;
+    background-color: #fff;
+    border: 1px solid #eee;
+    flex-shrink: 0;
+    pointer-events: none; /* Inicia desabilitado para arrastar */
+}
+
+.wire.draggable {
+    pointer-events: auto;
+}
+
+.wire img {
+    width: 100%;
+    height: 100px;
+    object-fit: contain;
+    display: block;
+}
+
+.wire .wire-name {
+    font-size: 0.55em;
+    color: var(--senai-text-color);
+    text-align: center;
+    position: absolute;
+    bottom: 5px;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0 2px;
+    box-sizing: border-box;
+}
+
+.wire:active {
+    cursor: grabbing;
+    transform: scale(1.05);
+}
+
+#rj45-connector {
+    position: relative;
+    width: 100%;
+    max-width: 250px;
+    height: 150px;
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    background-color: #fff;
+    border-radius: 8px;
+    padding-bottom: 0.5rem;
+}
+
+#rj45-connector img {
+    width: 80%;
+    height: auto;
+    position: absolute;
+    bottom: 0;
+}
+
+.pin-slots {
+    display: flex;
+    position: absolute;
+    bottom: 30px;
+    width: 75%;
+    justify-content: space-between;
+    height: 25px;
+    align-items: flex-end;
+}
+
+.pin-slot {
+    width: 18px;
+    height: 25px;
+    border: 1px dashed var(--senai-gray-medium);
+    background-color: #f9f9f9;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    transition: background-color 0.2s, border-color 0.2s;
+    border-radius: 3px;
+}
+
+.pin-slot.highlight-drop {
+    border-color: var(--senai-green);
+    box-shadow: 0 0 5px var(--senai-green);
+}
+
+.pin-slot.filled {
+    background-color: #e6ffe6;
+    border-color: var(--senai-green);
+}
+
+.wire-in-slot {
+    width: 100%;
+    height: 100px;
+    position: absolute;
+    bottom: 0;
+    transition: transform 0.3s ease;
+    object-fit: contain;
+}
+
+#cable-tester {
+    margin-top: 2rem;
+    border: 1px solid #d0d0d0;
+    padding: 1.2rem;
+    border-radius: 8px;
+    text-align: center;
+    background-color: #f8f8f8;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+    width: 100%;
+    max-width: 400px;
+}
+
+#cable-tester h3 {
+    margin-top: 0;
+    color: var(--senai-text-color);
+}
+
+.tester-lights {
+    display: flex;
+    justify-content: center;
+    gap: 0.7rem;
+    margin-top: 1rem;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+}
+
+.tester-lights .light {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background-color: var(--senai-gray-medium);
+    border: 2px solid #b0b0b0;
+    box-shadow: inset 0 0 3px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tester-lights .light.on {
+    background-color: var(--senai-green);
+    box-shadow: 0 0 10px var(--senai-green), inset 0 0 5px rgba(255,255,255,0.7);
+}
+.tester-lights .light.error {
+    background-color: #dc3545;
+    box-shadow: 0 0 10px #dc3545, inset 0 0 5px rgba(255,255,255,0.7);
+}
+
+#tester-message {
+    font-weight: bold;
+    color: var(--senai-text-color);
+    min-height: 1.5rem;
+}
+
+#test-button {
+    margin-top: 1rem;
+    padding: 0.8rem 1.5rem;
+    background-color: var(--senai-blue);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s, transform 0.1s;
+    width: auto;
+}
+
+#test-button:hover:enabled {
+    background-color: var(--senai-button-hover);
+    transform: translateY(-2px);
+}
+
+#test-button:disabled {
+    background-color: var(--senai-gray-medium);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.sidebar {
+    flex: 1;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding-left: 1.5rem;
+    border-left: 1px solid #e0e0e0;
+}
+
+.tools-panel, .instructions-panel {
+    background-color: #f8f8f8;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.2rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.tools-panel h2, .instructions-panel h2 {
+    margin-top: 0;
+    color: var(--senai-blue);
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.8rem;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+}
+
+.tool {
+    text-align: center;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, transform 0.1s;
+    pointer-events: none; /* Inicia desabilitado */
+    opacity: 0.5;
+}
+
+.tool.enabled {
+    pointer-events: auto;
+    opacity: 1;
+}
+
+.tool:hover.enabled {
+    background-color: #eef5fb;
+    border-color: var(--senai-blue);
+}
+
+.tool.active {
+    border: 2px solid var(--senai-blue);
+    background-color: #e0f0ff;
+    box-shadow: 0 0 8px rgba(0, 77, 125, 0.3);
+}
+
+.tool img {
+    width: 60px;
+    height: 60px;
+    display: block;
+    margin: 0 auto 0.5rem auto;
+}
+
+.tool span {
+    font-size: 0.9em;
+    color: var(--senai-text-color);
+    font-weight: bold;
+}
+
+#current-instruction {
+    font-size: 1rem;
+    min-height: 3rem;
+    margin-bottom: 1.2rem;
+    color: var(--senai-text-color);
+    line-height: 1.4;
+    font-weight: 500;
+}
+
+.pattern-selection {
+    margin-bottom: 1.2rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.pattern-selection button {
+    padding: 0.7rem 1.2rem;
+    background-color: var(--senai-green);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s, transform 0.1s;
+    flex-grow: 1;
+    max-width: 48%;
+}
+
+.pattern-selection button:hover:enabled {
+    background-color: #1a6f3f;
+    transform: translateY(-2px);
+}
+
+.pattern-selection button:disabled {
+    background-color: var(--senai-gray-medium);
+    cursor: not-allowed;
+}
+
+.pattern-selection button.new-pattern {
+    background-color: #b05e00;
+}
+
+.pattern-selection button.new-pattern:hover:enabled {
+    background-color: #8c4b00;
+}
+
+
+.action-button {
+    padding: 0.7rem 1.2rem;
+    background-color: var(--senai-button-reset);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s, transform 0.1s;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 1rem;
+}
+
+.action-button:hover {
+    background-color: var(--senai-button-reset-hover);
+    transform: translateY(-2px);
+}
+
+.feedback {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    display: none;
+    z-index: 1000;
+    font-size: 1rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    min-width: 200px;
+    text-align: center;
+}
+
+/* --- Media Queries para Responsividade --- */
+
+@media (max-width: 1024px) {
+    .simulator-container {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .workspace {
+        border-right: none;
+        padding-right: 0;
+        width: 100%;
+        max-width: none;
+    }
+
+    .sidebar {
+        border-left: none;
+        padding-left: 0;
+        width: 100%;
+        max-width: none;
+        flex-direction: column;
+    }
+
+    #cable-area, #rj45-connector, #cable-tester {
+        max-width: 100%;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 0.5rem;
+    }
+
+    header {
+        padding: 0.8rem 1rem;
+        border-radius: 6px;
+    }
+
+    .senai-logo {
+        height: 50px;
+    }
+
+    header h1 {
+        font-size: 1.3rem;
+    }
+
+    .simulator-container {
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .workspace, .sidebar {
+        padding: 0.5rem;
+        gap: 1rem;
+    }
+
+    #cable-area {
+        height: 140px;
+        margin-bottom: 0.8rem;
+    }
+
+    #stripped-wires {
+        height: 120px;
+        gap: 1px;
+        width: calc(100% - 10px);
+    }
+
+    .wire {
+        min-width: 45px;
+        width: 45px;
+        height: 120px;
+        padding-bottom: 20px;
+    }
+
+    .wire img {
+        height: 100px;
+    }
+
+    .wire .wire-name {
+        font-size: 0.48em;
+        bottom: 3px;
+    }
+
+    #rj45-connector {
+        height: 120px;
+        margin-top: 1rem;
+        padding-bottom: 0.3rem;
+    }
+
+    .pin-slots {
+        bottom: 20px;
+        width: 80%;
+    }
+
+    .pin-slot {
+        width: 15px;
+        height: 20px;
+    }
+
+    .wire-in-slot {
+        height: 100px;
+    }
+
+    #cable-tester {
+        margin-top: 1.5rem;
+        padding: 1rem;
+    }
+
+    .tester-lights {
+        gap: 0.5rem;
+        margin-top: 0.8rem;
+        margin-bottom: 1rem;
+    }
+
+    .tester-lights .light {
+        width: 1.2rem;
+        height: 1.2rem;
+    }
+
+    #test-button {
+        padding: 0.7rem 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .tools-panel, .instructions-panel {
+        padding: 1rem;
+    }
+
+    .tools-panel h2, .instructions-panel h2 {
+        font-size: 1.1rem;
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .tool {
+        padding: 0.8rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .tool img {
+        width: 50px;
+        height: 50px;
+        margin-bottom: 0.3rem;
+    }
+
+    .tool span {
+        font-size: 0.8em;
+    }
+
+    #current-instruction {
+        font-size: 0.9rem;
+        min-height: 2.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .pattern-selection button {
+        padding: 0.6rem 1rem;
+        font-size: 0.8rem;
+        flex-grow: 1;
+        max-width: 100%;
+    }
+
+    .action-button {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .feedback {
+        bottom: 1rem;
+        padding: 0.8rem 1.2rem;
+        font-size: 0.9rem;
+        width: 90%;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.1rem;
+    }
+    .senai-logo {
+        height: 40px;
+    }
+    .header-content {
+        gap: 1rem;
+    }
+    #cable-area {
+        height: 120px;
+    }
+    #stripped-wires {
+        height: 120px;
+        gap: 0.2rem;
+    }
+    .wire {
+        width: 35px;
+        min-width: 35px;
+        height: 120px;
+        padding-bottom: 20px;
+    }
+    .wire img {
+        height: 100px;
+    }
+    .wire .wire-name {
+        font-size: 0.4em;
+        bottom: 2px;
+    }
+    #rj45-connector {
+        height: 100px;
+    }
+    .pin-slots {
+        bottom: 15px;
+        width: 90%;
+    }
+    .pin-slot {
+        width: 12px;
+        height: 18px;
+    }
+    .tester-lights .light {
+        width: 1rem;
+        height: 1rem;
+    }
+}
