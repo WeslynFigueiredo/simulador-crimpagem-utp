@@ -95,7 +95,7 @@ header h1 {
     position: relative;
     width: 100%;
     max-width: 450px;
-    height: 150px;
+    height: 150px; /* Aumentado a altura para dar mais espaço aos fios */
     margin-bottom: 1rem;
     display: flex;
     align-items: center;
@@ -125,7 +125,7 @@ header h1 {
     transform: translate(-50%, -50%);
     display: flex; /* Será 'flex' quando visível */
     gap: 2px;
-    height: 140px;
+    height: 140px; /* Altura ajustada: 100px (imagem) + 30px (padding-bottom) + 10px (margem extra) */
     align-items: flex-end;
     opacity: 0; /* Inicia invisível */
     transition: opacity 0.5s ease-in;
@@ -133,8 +133,8 @@ header h1 {
     justify-content: center;
     width: calc(100% - 20px);
     max-width: 450px;
-    overflow-x: auto;
-    padding-top: 10px;
+    overflow-x: auto; /* Adiciona scroll horizontal se ainda não couber */
+    padding-top: 10px; /* Para garantir que o topo da imagem não seja cortado se o alinhamento mudar */
     /* Imagem de fundo para representar os fios trançados */
     background-image: url('../assets/stripped_cable_twisted.png'); /* A imagem que você acabou de gerar */
     background-size: contain;
@@ -152,7 +152,7 @@ header h1 {
 /* Quando os fios são "desentrançados" e aparecem individualmente */
 #stripped-wires.untwisted {
     background-image: none; /* Remove a imagem de fundo */
-    display: flex; /* Garante que os fios individuais sejam exibidos */
+    /* display: flex; já está em #stripped-wires */
 }
 
 /* Quando os fios são "cortados" e alinhados */
@@ -170,7 +170,7 @@ header h1 {
     align-items: center;
     min-width: 60px;
     width: 60px;
-    height: 130px;
+    height: 130px; /* 100px (imagem) + 30px (padding-bottom para o nome) */
     border-radius: 3px;
     cursor: grab;
     position: relative;
@@ -189,7 +189,7 @@ header h1 {
 
 .wire img {
     width: 100%;
-    height: 100px;
+    height: 100px; /* Define a altura EXATA da imagem do fio como 100px */
     object-fit: contain;
     display: block;
 }
@@ -273,7 +273,7 @@ header h1 {
 
 .wire-in-slot {
     width: 100%;
-    height: 100px;
+    height: 100px; /* Agora deve corresponder à altura original da imagem do fio */
     position: absolute;
     bottom: 0;
     transition: transform 0.3s ease;
